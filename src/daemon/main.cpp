@@ -196,6 +196,7 @@ int main(int argc, char** argv) {
         // replace bad UTF-8 instead of throwing; a clipboard
         // app can still mislabel binary as text/plain. Don't abort the daemon.
         tether::broadcast_message(j.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace));
+        tether::bluetooth::publish_clipboard_to_phones(text);
     });
     wayland_srv.set_clipboard_image_callback([](const std::string& png) {
         if (tether::clipboard_auto_share())

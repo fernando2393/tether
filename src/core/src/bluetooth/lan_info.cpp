@@ -63,6 +63,22 @@ namespace tether::bluetooth {
         }
     }
 
+    std::string clipboard_ble_payload(const std::string& text, bool& truncated, size_t max_bytes) {
+        truncated = text.size() > max_bytes;
+        if (!truncated)
+            return text;
+        size_t cut = max_bytes;
+        // back up over continuation bytes (10xxxxxx) so the cut lands on a character boundary
+        while (cut > 0 && (static_cast<unsigned char>(text[cut]) & 0xC0) == 0x80)
+            --cut;
+        return text.substr(0, cut);
+    }
+
+    std::string encode_clipboard_announce(uint64_t seq, size_t size, bool truncated) {
+        const nlohmann::json doc = {{"v", 1}, {"seq", seq}, {"size", size}, {"trunc", truncated}};
+        return doc.dump();
+    }
+
     struct LanInfoState {
         GDBusConnection* conn = nullptr;
         std::string name;
@@ -71,9 +87,17 @@ namespace tether::bluetooth {
 
         guint root_id = 0;
         guint char_id = 0;
+        guint clip_announce_id = 0;
+        guint clip_text_id = 0;
         guint watch_id = 0;
         guint added_id = 0;
         GCancellable* cancellable = nullptr;
+
+        // Clipboard offered over GATT. Touched only on the monitor's thread.
+        std::string clip_text;
+        uint64_t clip_seq = 0;
+        bool clip_truncated = false;
+        int clip_listeners = 0; // StartNotify calls not yet matched by a StopNotify
 
         bool bluez_up = false;
         std::string wanted;        // adapter the daemon asked for
@@ -87,6 +111,9 @@ namespace tether::bluetooth {
         constexpr const char* APP_PATH = "/org/tether/lan";
         constexpr const char* SERVICE_PATH = "/org/tether/lan/service0";
         constexpr const char* CHAR_PATH = "/org/tether/lan/service0/char0";
+        constexpr const char* CLIP_ANNOUNCE_PATH = "/org/tether/lan/service0/char1";
+        constexpr const char* CLIP_TEXT_PATH = "/org/tether/lan/service0/char2";
+        LanInfoService* g_service = nullptr;
 
         // iOS caches the host's GATT handles and reads the cached one without rediscovering.
         // Auto-allocated handles shift with registration order (PipeWire's LE Audio and MIDI
@@ -106,6 +133,8 @@ namespace tether::bluetooth {
       <arg type='a{sv}' direction='in'/>
       <arg type='ay' direction='out'/>
     </method>
+    <method name='StartNotify'/>
+    <method name='StopNotify'/>
   </interface>
 </node>)XML";
 
@@ -138,12 +167,32 @@ namespace tether::bluetooth {
             g_variant_builder_add(&objects, "{o@a{sa{sv}}}", CHAR_PATH,
                                   interfaces("org.bluez.GattCharacteristic1", g_variant_builder_end(&props)));
 
+            // Clipboard push: change announcements (notify) and the text itself.
+            const gchar* announce_flags[] = {"encrypt-read", "notify"};
+            g_variant_builder_init(&props, G_VARIANT_TYPE("a{sv}"));
+            g_variant_builder_add(&props, "{sv}", "UUID", g_variant_new_string(UUID_TETHER_CLIPBOARD_ANNOUNCE));
+            g_variant_builder_add(&props, "{sv}", "Service", g_variant_new_object_path(SERVICE_PATH));
+            g_variant_builder_add(&props, "{sv}", "Flags", g_variant_new_strv(announce_flags, 2));
+            g_variant_builder_add(&objects, "{o@a{sa{sv}}}", CLIP_ANNOUNCE_PATH,
+                                  interfaces("org.bluez.GattCharacteristic1", g_variant_builder_end(&props)));
+
+            g_variant_builder_init(&props, G_VARIANT_TYPE("a{sv}"));
+            g_variant_builder_add(&props, "{sv}", "UUID", g_variant_new_string(UUID_TETHER_CLIPBOARD_TEXT));
+            g_variant_builder_add(&props, "{sv}", "Service", g_variant_new_object_path(SERVICE_PATH));
+            g_variant_builder_add(&props, "{sv}", "Flags", g_variant_new_strv(flags, 1));
+            g_variant_builder_add(&objects, "{o@a{sa{sv}}}", CLIP_TEXT_PATH,
+                                  interfaces("org.bluez.GattCharacteristic1", g_variant_builder_end(&props)));
+
             return g_variant_new("(@a{oa{sa{sv}}})", g_variant_builder_end(&objects));
+        }
+
+        std::string announce_value(const LanInfoState* state) {
+            return encode_clipboard_announce(state->clip_seq, state->clip_text.size(), state->clip_truncated);
         }
 
         void handle_method(GDBusConnection*,
                            const gchar*,
-                           const gchar*,
+                           const gchar* object_path,
                            const gchar*,
                            const gchar* method,
                            GVariant* parameters,
@@ -154,14 +203,29 @@ namespace tether::bluetooth {
                 return;
             }
 
-            const auto* state = static_cast<LanInfoState*>(user_data);
+            auto* state = static_cast<LanInfoState*>(user_data);
+            if (g_strcmp0(method, "StartNotify") == 0 || g_strcmp0(method, "StopNotify") == 0) {
+                if (g_strcmp0(object_path, CLIP_ANNOUNCE_PATH) == 0) {
+                    state->clip_listeners += g_strcmp0(method, "StartNotify") == 0 ? 1 : -1;
+                    if (state->clip_listeners < 0)
+                        state->clip_listeners = 0;
+                }
+                g_dbus_method_invocation_return_value(invocation, nullptr);
+                return;
+            }
+
             GVariant* options = g_variant_get_child_value(parameters, 0);
             guint16 offset = 0;
             g_variant_lookup(options, "offset", "q", &offset);
             g_variant_unref(options);
 
-            const std::string value =
-                encode_lan_info(state->name, state->port, state->fingerprint, lan_addresses());
+            std::string value;
+            if (g_strcmp0(object_path, CLIP_ANNOUNCE_PATH) == 0)
+                value = announce_value(state);
+            else if (g_strcmp0(object_path, CLIP_TEXT_PATH) == 0)
+                value = state->clip_text;
+            else
+                value = encode_lan_info(state->name, state->port, state->fingerprint, lan_addresses());
             if (offset > value.size()) {
                 g_dbus_method_invocation_return_dbus_error(invocation, "org.bluez.Error.InvalidOffset", "");
                 return;
@@ -262,6 +326,7 @@ namespace tether::bluetooth {
         state_->name = std::move(name);
         state_->port = port;
         state_->fingerprint = std::move(fingerprint);
+        g_service = this;
 
         monitor_.invoke_sync([state = state_.get()] {
             GError* error = nullptr;
@@ -276,8 +341,13 @@ namespace tether::bluetooth {
             g_clear_error(&error);
             state->char_id = g_dbus_connection_register_object(
                 state->conn, CHAR_PATH, info->interfaces[1], &LAN_VTABLE, state, nullptr, &error);
+            state->clip_announce_id = g_dbus_connection_register_object(
+                state->conn, CLIP_ANNOUNCE_PATH, info->interfaces[1], &LAN_VTABLE, state, nullptr, &error);
+            state->clip_text_id = g_dbus_connection_register_object(
+                state->conn, CLIP_TEXT_PATH, info->interfaces[1], &LAN_VTABLE, state, nullptr, &error);
             g_dbus_node_info_unref(info);
-            if (state->root_id == 0 || state->char_id == 0) {
+            if (state->root_id == 0 || state->char_id == 0 || state->clip_announce_id == 0 ||
+                state->clip_text_id == 0) {
                 debug::log(ERR, "bluetooth: cannot export LAN info service: {}", error ? error->message : "unknown");
                 g_clear_error(&error);
                 return;
@@ -296,6 +366,7 @@ namespace tether::bluetooth {
     }
 
     LanInfoService::~LanInfoService() {
+        g_service = nullptr;
         monitor_.invoke_sync([state = state_.get()] {
             if (state->watch_id != 0)
                 g_bus_unwatch_name(state->watch_id);
@@ -313,6 +384,10 @@ namespace tether::bluetooth {
                     g_variant_unref(reply);
             }
 
+            if (state->clip_text_id != 0)
+                g_dbus_connection_unregister_object(state->conn, state->clip_text_id);
+            if (state->clip_announce_id != 0)
+                g_dbus_connection_unregister_object(state->conn, state->clip_announce_id);
             if (state->char_id != 0)
                 g_dbus_connection_unregister_object(state->conn, state->char_id);
             if (state->root_id != 0)
@@ -331,6 +406,40 @@ namespace tether::bluetooth {
             state->wanted = adapter_path;
             reconcile(state);
         });
+    }
+
+    void LanInfoService::publish_clipboard(const std::string& text) {
+        monitor_.invoke_sync([state = state_.get(), &text] {
+            bool truncated = false;
+            std::string payload = clipboard_ble_payload(text, truncated);
+            if (payload == state->clip_text && truncated == state->clip_truncated && state->clip_seq != 0)
+                return; // the clipboard changed to what the phone already has
+            state->clip_text = std::move(payload);
+            state->clip_truncated = truncated;
+            ++state->clip_seq;
+            if (state->clip_listeners <= 0 || state->conn == nullptr || state->clip_announce_id == 0)
+                return;
+
+            // BlueZ turns a Value change on the characteristic into a notification to every subscribed phone.
+            const std::string value = announce_value(state);
+            GVariantBuilder changed;
+            g_variant_builder_init(&changed, G_VARIANT_TYPE("a{sv}"));
+            GVariant* bytes = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, value.data(), value.size(), 1);
+            g_variant_builder_add(&changed, "{sv}", "Value", bytes);
+            GError* error = nullptr;
+            g_dbus_connection_emit_signal(
+                state->conn, nullptr, CLIP_ANNOUNCE_PATH, "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                g_variant_new("(sa{sv}as)", "org.bluez.GattCharacteristic1", &changed, nullptr), &error);
+            if (error) {
+                debug::log(WARN, "bluetooth: clipboard notification failed: {}", error->message);
+                g_clear_error(&error);
+            }
+        });
+    }
+
+    void publish_clipboard_to_phones(const std::string& text) {
+        if (g_service)
+            g_service->publish_clipboard(text);
     }
 
 } // namespace tether::bluetooth

@@ -252,6 +252,24 @@ The value is compact UTF-8 JSON of at most 512 bytes, built fresh on every read:
 - The handle is pinned because iOS reads from its cached handle table without rediscovering it,
   and auto-allocated handles move whenever other GATT services register in a different order.
 
+### Bluetooth clipboard push
+
+A bonded phone with no TCP session (iOS suspends the app) cannot learn that the Host clipboard changed. The
+LAN-info service above carries two more characteristics, both `encrypt-read`:
+
+| | |
+|---|---|
+| `ba7a69f7-bf0f-4c09-8c73-cf4ee9afb5b7` (announce) | `encrypt-read`, `notify`. Value `{"v":1,"seq":N,"size":S,"trunc":false}`, notified whenever the clipboard text changes. |
+| `ba7a69f7-bf0f-4c09-8c73-cf4ee9afb5b8` (text) | `encrypt-read`. The Host clipboard as UTF-8. |
+
+A phone subscribes to announce and reads text when it fires. `seq` rises with every change, `size` is the length
+of the text value, and `trunc` is true when the clipboard was longer than the limit: ATT caps an attribute at
+512 bytes, so the value is cut at 512 bytes on a character boundary and a client that wants the rest uses the
+network session. Text only. Nothing is sent when `clipboard_auto_share` is off.
+
+The characteristics sit after the LAN-info one, so its handle (`0xf002`) is unchanged. Readers ignore unknown
+keys; a new `v` means an incompatible change.
+
 ### `pair_request` (Untrusted Client -> Daemon)
 
 **Description**: Emitted natively by a new client over standard TLS to gracefully present its identity and X.509 fingerprint. The Daemon immediately intercepts the payload, extracts the fingerprint natively from the `SSL*` pipe, and flags it locally as "Pending Authentication". Anything other than `pair_request` results in the TLS socket securely disconnecting.

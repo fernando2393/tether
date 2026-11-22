@@ -44,3 +44,51 @@ TEST(LanInfoTest, HostAddressesSkipLoopbackAndLinkLocal) {
         seen_v6 = seen_v6 || v6;
     }
 }
+
+TEST(ClipboardBlePayload, ShortTextIsUntouched) {
+    bool truncated = true;
+    EXPECT_EQ(tether::bluetooth::clipboard_ble_payload("hello", truncated), "hello");
+    EXPECT_FALSE(truncated);
+    EXPECT_EQ(tether::bluetooth::clipboard_ble_payload("", truncated), "");
+    EXPECT_FALSE(truncated);
+}
+
+TEST(ClipboardBlePayload, ExactlyTheLimitIsNotTruncated) {
+    bool truncated = true;
+    const std::string text(tether::bluetooth::CLIPBOARD_MAX_BYTES, 'a');
+    EXPECT_EQ(tether::bluetooth::clipboard_ble_payload(text, truncated), text);
+    EXPECT_FALSE(truncated);
+}
+
+TEST(ClipboardBlePayload, LongTextIsCutAtTheLimit) {
+    bool truncated = false;
+    const std::string text(tether::bluetooth::CLIPBOARD_MAX_BYTES + 100, 'a');
+    const std::string out = tether::bluetooth::clipboard_ble_payload(text, truncated);
+    EXPECT_TRUE(truncated);
+    EXPECT_EQ(out.size(), tether::bluetooth::CLIPBOARD_MAX_BYTES);
+}
+
+TEST(ClipboardBlePayload, NeverSplitsAMultiByteCharacter) {
+    // "é" is 2 bytes, "✓" 3, "👋" 4: a cut at every offset must still be valid UTF-8
+    const std::string text = "aé✓👋"
+                             "aé✓👋"
+                             "aé✓👋";
+    for (size_t limit = 0; limit < text.size(); ++limit) {
+        bool truncated = false;
+        const std::string out = tether::bluetooth::clipboard_ble_payload(text, truncated, limit);
+        EXPECT_TRUE(truncated) << limit;
+        EXPECT_LE(out.size(), limit) << limit;
+        EXPECT_EQ(text.compare(0, out.size(), out), 0) << limit; // a prefix
+        // the next byte starts a character, so nothing was cut mid-sequence
+        EXPECT_NE(static_cast<unsigned char>(text[out.size()]) & 0xC0, 0x80) << limit;
+    }
+}
+
+TEST(ClipboardAnnounce, EncodesSequenceSizeAndTruncation) {
+    const auto doc = nlohmann::json::parse(tether::bluetooth::encode_clipboard_announce(7, 42, true));
+    EXPECT_EQ(doc["v"], 1);
+    EXPECT_EQ(doc["seq"], 7);
+    EXPECT_EQ(doc["size"], 42);
+    EXPECT_TRUE(doc["trunc"].get<bool>());
+    EXPECT_LE(tether::bluetooth::encode_clipboard_announce(UINT64_MAX, 512, false).size(), 64u); // fits any MTU read
+}
