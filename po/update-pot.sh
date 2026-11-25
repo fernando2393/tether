@@ -41,6 +41,10 @@ xgettext -j -L Desktop --output="$NEW" --add-location=file \
          --keyword=Name --keyword=GenericName --keyword=Comment $META \
          src/gtk/tether-gtk.desktop.in
 
+# shellcheck disable=SC2086
+xgettext -j -L Python --output="$NEW" --from-code=UTF-8 --keyword=_ --add-location=file $META \
+         src/gtk/tether-nautilus.py
+
 # POT-Creation-Date alone changes on every run and would dirty the pot and every
 # catalog for nothing, so a run that changed only the timestamp is dropped. The
 # catalog loop below still runs: adding a language to LINGUAS must create its

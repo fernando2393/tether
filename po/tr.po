@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-11-22 18:43-0800\n"
+"POT-Creation-Date: 2026-11-25 21:16+0100\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Turkish\n"
@@ -3416,6 +3416,10 @@ msgstr "Aygıtları eşleştirin ve panoyu ağ üzerinden eşzamanlayın"
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;Mesajlar;Pano;Dosyalar;Bildirimler;Aramalar;AirPods;"
 
+#: src/gtk/tether-nautilus.py
+msgid "Send to iPhone"
+msgstr "iPhone’a gönder"
+
 #~ msgid "off, no Wayland session on this machine"
 #~ msgstr "kapalı, bu makinede Wayland oturumu yok"
 
@@ -3486,9 +3490,6 @@ msgstr "iPhone;iOS;SMS;Mesajlar;Pano;Dosyalar;Bildirimler;Aramalar;AirPods;"
 #~ msgstr ""
 #~ "Yeni çağrılar iPhone’da kalır. Burada çalmakta olan bir çağrı geri "
 #~ "taşınmaz."
-
-#~ msgid "Move audio to iPhone"
-#~ msgstr "Sesi iPhone’a taşı"
 
 #, fuzzy
 #~ msgid "Tether version"

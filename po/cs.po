@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-11-22 18:43-0800\n"
+"POT-Creation-Date: 2026-11-25 21:16+0100\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Czech\n"
@@ -3412,6 +3412,10 @@ msgstr "Spárujte zařízení a synchronizujte schránku po síti"
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;Zprávy;Schránka;Soubory;Oznámení;Hovory;AirPods;"
 
+#: src/gtk/tether-nautilus.py
+msgid "Send to iPhone"
+msgstr "Odeslat do iPhonu"
+
 #~ msgid "off, no Wayland session on this machine"
 #~ msgstr "vypnuto, na tomto počítači není relace Wayland"
 
@@ -3481,9 +3485,6 @@ msgstr "iPhone;iOS;SMS;Zprávy;Schránka;Soubory;Oznámení;Hovory;AirPods;"
 #~ "move back."
 #~ msgstr ""
 #~ "Nové hovory zůstanou v iPhonu. Hovor, který zde už hraje, se nevrátí."
-
-#~ msgid "Move audio to iPhone"
-#~ msgstr "Přesunout zvuk do iPhonu"
 
 #, fuzzy
 #~ msgid "Tether version"

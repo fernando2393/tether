@@ -7,6 +7,7 @@ url="https://github.com/zackb/tether"
 license=('MIT')
 depends=('gtk3' 'gtk-layer-shell' 'libnotify' 'ncurses' 'openssl' 'wayland' 'avahi' 'glib2' 'libsecret' 'bluez' 'bluez-utils' 'bluez-obex' 'ffmpeg' 'pipewire')
 makedepends=('cmake' 'ninja' 'git')
+optdepends=('python-nautilus: Send to iPhone in GNOME Files')
 provides=('tether' 'tether-bin')
 conflicts=('tether' 'tether-bin')
 install=packaging/tether.install

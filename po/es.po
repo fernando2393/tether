@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-11-22 18:43-0800\n"
+"POT-Creation-Date: 2026-11-25 21:16+0100\n"
 "PO-Revision-Date: 2026-08-22\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Spanish\n"
@@ -3464,6 +3464,10 @@ msgstr "Empareje dispositivos y sincronice el portapapeles a través de la red"
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;Mensajes;Portapapeles;Archivos;Notificaciones;Llamadas;AirPods;"
 
+#: src/gtk/tether-nautilus.py
+msgid "Send to iPhone"
+msgstr "Enviar al iPhone"
+
 #~ msgid "off, no Wayland session on this machine"
 #~ msgstr "desactivado, no hay sesión de Wayland en esta máquina"
 
@@ -3536,9 +3540,6 @@ msgstr "iPhone;iOS;SMS;Mensajes;Portapapeles;Archivos;Notificaciones;Llamadas;Ai
 #~ msgstr ""
 #~ "Las nuevas llamadas se quedarán en el iPhone. Una llamada que ya suena "
 #~ "aquí no vuelve."
-
-#~ msgid "Move audio to iPhone"
-#~ msgstr "Pasar el audio al iPhone"
 
 #, fuzzy
 #~ msgid "Tether version"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-11-22 18:43-0800\n"
+"POT-Creation-Date: 2026-11-25 21:16+0100\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Korean\n"
@@ -3373,6 +3373,10 @@ msgstr "기기를 페어링하고 네트워크를 통해 클립보드를 동기�
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;메시지;클립보드;파일;알림;통화;AirPods;"
 
+#: src/gtk/tether-nautilus.py
+msgid "Send to iPhone"
+msgstr "iPhone으로 보내기"
+
 #~ msgid "off, no Wayland session on this machine"
 #~ msgstr "꺼짐, 이 컴퓨터에 Wayland 세션이 없습니다"
 
@@ -3442,9 +3446,6 @@ msgstr "iPhone;iOS;SMS;메시지;클립보드;파일;알림;통화;AirPods;"
 #~ msgstr ""
 #~ "새 통화는 iPhone에 남습니다. 이미 여기서 재생 중인 통화는 되돌아가지 않습"
 #~ "니다."
-
-#~ msgid "Move audio to iPhone"
-#~ msgstr "오디오를 iPhone으로 옮기기"
 
 #, fuzzy
 #~ msgid "Tether version"

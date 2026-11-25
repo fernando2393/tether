@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-11-22 18:43-0800\n"
+"POT-Creation-Date: 2026-11-25 21:16+0100\n"
 "PO-Revision-Date: 2026-08-22\n"
 "Last-Translator: Tether project\n"
 "Language-Team: German\n"
@@ -3490,6 +3490,10 @@ msgstr ""
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;Nachrichten;Zwischenablage;Dateien;Mitteilungen;Anrufe;AirPods;"
 
+#: src/gtk/tether-nautilus.py
+msgid "Send to iPhone"
+msgstr "An iPhone senden"
+
 #~ msgid "off, no Wayland session on this machine"
 #~ msgstr "aus, auf diesem Rechner läuft keine Wayland-Sitzung"
 
@@ -3563,9 +3567,6 @@ msgstr "iPhone;iOS;SMS;Nachrichten;Zwischenablage;Dateien;Mitteilungen;Anrufe;Ai
 #~ msgstr ""
 #~ "Neue Anrufe bleiben auf dem iPhone. Ein Anruf, der hier bereits läuft, "
 #~ "wird nicht zurückverlegt."
-
-#~ msgid "Move audio to iPhone"
-#~ msgstr "Audio zum iPhone verlegen"
 
 #, fuzzy
 #~ msgid "Tether version"

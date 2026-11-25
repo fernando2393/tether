@@ -30,6 +30,7 @@ BuildRequires:  zip
 
 Requires:       bluez
 Requires:       bluez-obexd
+Recommends:     nautilus-python
 
 %description
 Tether bridges an iPhone to the Linux desktop: clipboard sync, file transfer,
@@ -69,6 +70,7 @@ messages, calls, and notifications.
 %{_datadir}/applications/tether-gtk.desktop
 %{_datadir}/icons/hicolor/*/apps/tether*
 %{_datadir}/kio/servicemenus/tether-send.desktop
+%{_datadir}/nautilus-python/extensions/tether-nautilus.py
 %{_metainfodir}/io.github.zackb.tether.metainfo.xml
 %{_datadir}/tether/
 %{_mandir}/man1/tether.1*

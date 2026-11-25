@@ -55,6 +55,10 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tether-gtk.desktop
 install(FILES tether-send.desktop
         DESTINATION ${CMAKE_INSTALL_DATADIR}/kio/servicemenus)
 
+# The same for GNOME Files, loaded when nautilus-python is installed.
+install(FILES tether-nautilus.py
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/nautilus-python/extensions)
+
 # Software centers (GNOME Software, Discover, Flathub) read this listing.
 install(FILES io.github.zackb.tether.metainfo.xml
         DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
